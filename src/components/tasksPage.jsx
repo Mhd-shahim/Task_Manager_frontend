@@ -155,7 +155,11 @@ function TasksPage() {
                                     <tr key={task.id}>
                                         <td>{indexOfFirstTask + idx + 1}</td>
                                         <td>{task.title}</td>
-                                        <td>{task.description}</td>
+                                        <td>
+                                        {task.description && task.description.length > 10
+                                            ? `${task.description.slice(0, 10)}...`
+                                            : task.description}
+                                        </td>
                                         <td>{task.status}</td>
                                         <td>{task.due_date}</td>
                                         <td>{task.created_at}</td>
