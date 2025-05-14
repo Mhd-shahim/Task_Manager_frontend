@@ -8,6 +8,8 @@ function TasksPage() {
     const [tasks, setTasks] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
+    const [isEdit, setIsEdit] = useState(false);
+    const [editTaskId, setEditTaskId] = useState(null);
 
     // Form state
     const [form, setForm] = useState({
@@ -54,26 +56,39 @@ function TasksPage() {
         }));
     };
 
-    // Handle form submit
     const handleSubmit = async (e) => {
         e.preventDefault();
-        // Replace with your API POST endpoint
         try {
-            const response = await fetch('http://127.0.0.1:8000/test/create-task', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(form),
-            });
+            let response;
+            if (isEdit) {
+                response = await fetch(`http://127.0.0.1:8000/test/edit-task/${editTaskId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(form),
+                });
+            } else {
+                response = await fetch('http://127.0.0.1:8000/test/create-task', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(form),
+                });
+            }
             if (response.ok) {
-                const newTask = await response.json();
-                setTasks([newTask, ...tasks]);
+                const updatedTask = await response.json();
+                if (isEdit) {
+                    setTasks(tasks.map(t => t.id === editTaskId ? updatedTask : t));
+                } else {
+                    setTasks([updatedTask, ...tasks]);
+                }
                 setShowModal(false);
                 setForm({ title: '', description: '', status: 'Pending', due_date: '' });
+                setIsEdit(false);
+                setEditTaskId(null);
             } else {
-                alert('Failed to create task');
+                alert('Failed to save task');
             }
         } catch (error) {
-            alert('Error creating task');
+            alert('Error saving task');
         }
     };
 
@@ -129,7 +144,22 @@ function TasksPage() {
                                         <td>{task.created_at}</td>
                                         <td>
                                             <div className='d-flex justify-content-center'>
-                                                <button className="btn btn-primary btn-sm">Edit</button>
+                                                <button
+                                                className="btn btn-primary btn-sm"
+                                                onClick={() => {
+                                                    setIsEdit(true);
+                                                    setEditTaskId(task.id);
+                                                    setForm({
+                                                    title: task.title,
+                                                    description: task.description,
+                                                    status: task.status,
+                                                    due_date: task.due_date,
+                                                    });
+                                                    setShowModal(true);
+                                                }}
+                                                >
+                                                Edit
+                                                </button>
                                                 <button className="btn btn-danger btn-sm ms-2">Delete</button>
                                             </div>
                                         </td>
@@ -164,9 +194,17 @@ function TasksPage() {
             </div>
 
             {/* Bootstrap Modal with Form */}
-            <Modal show={showModal} onHide={() => setShowModal(false)}>
+            <Modal
+                show={showModal}
+                onHide={() => {
+                    setShowModal(false);
+                    setIsEdit(false);
+                    setEditTaskId(null);
+                    setForm({ title: '', description: '', status: 'Pending', due_date: '' });
+                }}
+            >
                 <Modal.Header closeButton>
-                    <Modal.Title>Create Task</Modal.Title>
+                    <Modal.Title>{isEdit ? "Edit Task" : "Create Task"}</Modal.Title>
                 </Modal.Header>
                 <Form onSubmit={handleSubmit}>
                     <Modal.Body>
@@ -199,7 +237,6 @@ function TasksPage() {
                                 required
                             >
                                 <option value="Pending">Pending</option>
-                                <option value="In Progress">In Progress</option>
                                 <option value="Completed">Completed</option>
                             </Form.Select>
                         </Form.Group>
@@ -216,7 +253,7 @@ function TasksPage() {
                     </Modal.Body>
                     <Modal.Footer>
                         <Button style={{width:"100%"}} variant="primary" type="submit">
-                            Create Task
+                            {isEdit ? "Update Task" : "Create Task"}
                         </Button>
                     </Modal.Footer>
                 </Form>
