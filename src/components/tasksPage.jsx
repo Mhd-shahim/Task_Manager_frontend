@@ -92,6 +92,23 @@ function TasksPage() {
         }
     };
 
+    // Add this function inside your TasksPage component
+    const handleDelete = async (taskId) => {
+        if (!window.confirm("Are you sure you want to delete this task?")) return;
+        try {
+            const response = await fetch(`http://127.0.0.1:8000/test/task-delete/${taskId}`, {
+                method: 'POST',
+            });
+            if (response.ok) {
+                setTasks(tasks.filter(task => task.id !== taskId));
+            } else {
+                alert('Failed to delete task');
+            }
+        } catch (error) {
+            alert('Error deleting task');
+        }
+    };
+
     return (
         <>
             <h1 className="text-center">Tasks</h1>
@@ -160,7 +177,12 @@ function TasksPage() {
                                                 >
                                                 Edit
                                                 </button>
-                                                <button className="btn btn-danger btn-sm ms-2">Delete</button>
+                                                <button
+                                                    className="btn btn-danger btn-sm ms-2"
+                                                    onClick={() => handleDelete(task.id)}
+                                                >
+                                                    Delete
+                                                </button>
                                             </div>
                                         </td>
                                     </tr>
